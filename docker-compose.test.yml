@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=instagram_sync_test
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: sh -c "python manage.py migrate && pytest -v"
+    volumes:
+      - .:/app  # Dev/test: mounts local code into container
+      - /app/.venv  # Preserve container's .venv from being overwritten by host mount
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/instagram_sync_test
+      - DEBUG=True
+      - SECRET_KEY=test-secret-key
+      - ALLOWED_HOSTS=*
+      - INSTAGRAM_TOKEN=test-token
+    depends_on:
+      db:
+        condition: service_healthy

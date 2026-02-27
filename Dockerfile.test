@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /bin/uv
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen
+
+COPY . .
+ENV PATH="/app/.venv/bin:$PATH"
